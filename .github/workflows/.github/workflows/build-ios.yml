@@ -1,0 +1,38 @@
+name: Build Godot Editor iOS
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-python-version: '3.x'
+
+      - name: Setup SCons
+        run: pip install scons
+
+      - name: Clone Godot Engine
+        run: git clone --depth 1 https://github.com -b 4.3-stable
+
+      - name: Compile Editor
+        run: |
+          cd godot
+          scons platform=ios target=editor arch=arm64 dev_mode=yes
+          
+      - name: Create Unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r godot/bin/godot.ios.editor.arm64.framework Payload/Godot.app
+          zip -r godot-editor.ipa Payload
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-editor-ipa
+          path: godot-editor.ipa
